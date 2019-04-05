@@ -1,20 +1,16 @@
 import java.io.*;
 import java.util.Observable;
 import javafx.event.EventHandler;
+import javafx.geometry.*;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
-import javafx.scene.control.CustomMenuItem;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
@@ -84,14 +80,20 @@ public class ReversiView extends javafx.application.Application implements java.
 		Label label = new Label("New Game");
 		MenuItem newGame = new CustomMenuItem(label);
 		menuFile.getItems().add(newGame);
+		
+		Label networkedGameLabel = new Label("Networked Game");
+		MenuItem networkedGame = new CustomMenuItem(networkedGameLabel);
+		menuFile.getItems().add(networkedGame);
+		
 		menuBar.getMenus().add(menuFile);
+		
 		score = new Label(scoreString()); // score on bottom
 		Canvas board = new Canvas(rowPixels, colPixels); // game board
 		gc = board.getGraphicsContext2D();
 		reset(board, stage, label); // reset canvas
 
 		// lets user move
-		play(board, stage, label);
+		play(board, stage, label, networkedGameLabel);
 
 		// set up window
 		window.setTop(menuBar);
@@ -188,7 +190,7 @@ public class ReversiView extends javafx.application.Application implements java.
 	 * @param stage Stage to display GUI
 	 * @param label Label to show score
 	 */
-	private void play(Canvas board, Stage stage, Label label) {
+	private void play(Canvas board, Stage stage, Label label, Label networkedGameLabel) {
 		
 		// handles user clicks on the board
 		board.setOnMouseClicked(new EventHandler<MouseEvent>() {
@@ -294,6 +296,77 @@ public class ReversiView extends javafx.application.Application implements java.
 				update(controller.model, controller.model.getBoard());
 			}
 		});
+		
+		networkedGameLabel.setOnMouseClicked(new EventHandler<MouseEvent>() {
+			@Override
+			public void handle(MouseEvent event) {
+				NetworkSetup dialog = new NetworkSetup();
+				dialog.initModality(Modality.APPLICATION_MODAL);
+				dialog.showAndWait();
+				//System.out.println("?");
+			}
+		});
+	}
+	
+	private class NetworkSetup extends Stage {
+		public NetworkSetup() {
+			setTitle("Network Setup");
+			
+			fillWindow();
+		}
+		
+		private void fillWindow() {
+			Label lCreate = new Label("Create:");
+			RadioButton rbServer = new RadioButton();
+			Label lServer = new Label("Server");
+			HBox hbServer = new HBox();
+			hbServer.getChildren().addAll(rbServer, lServer);
+			RadioButton rbClient = new RadioButton();
+			Label lClient = new Label("Client");
+			HBox hbClient = new HBox();
+			hbClient.getChildren().addAll(rbClient, lClient);
+			HBox create = new HBox();
+			create.getChildren().addAll(lCreate, hbServer, hbClient);
+			create.setSpacing(10);
+			
+			Label lPlayAs = new Label("Play as:");
+			RadioButton rbHuman = new RadioButton();
+			Label lHuman = new Label("Human");
+			HBox hbHuman = new HBox();
+			hbHuman.getChildren().addAll(rbHuman, lHuman);
+			RadioButton rbComputer = new RadioButton();
+			Label lComputer = new Label("Computer");
+			HBox hbComputer = new HBox();
+			hbComputer.getChildren().addAll(rbComputer, lComputer);
+			HBox playAs = new HBox();
+			playAs.getChildren().addAll(lPlayAs, hbHuman, hbComputer);
+			playAs.setSpacing(10);
+			
+			Label lServerAdd = new Label("Server");
+			TextField tfServer = new TextField("localhost");
+			Label lPort = new Label("Port");
+			TextField tfPort = new TextField("4000");
+			HBox connectTo = new HBox();
+			connectTo.getChildren().addAll(lServerAdd, tfServer, lPort, tfPort);
+			connectTo.setSpacing(10);
+			
+			Button bOK = new Button("OK");
+			Button bCancel = new Button("Cancel");
+			HBox buttons = new HBox();
+			buttons.getChildren().addAll(bOK, bCancel);
+			buttons.setSpacing(10);
+			
+			VBox vbox = new VBox();
+			vbox.getChildren().addAll(create, playAs, connectTo, buttons);
+			VBox.setMargin(create, new Insets(20, 20, 20, 20));
+			VBox.setMargin(playAs, new Insets(20, 20, 20, 20));
+			VBox.setMargin(connectTo, new Insets(20, 20, 20, 20));
+			VBox.setMargin(buttons, new Insets(20, 20, 20, 20));
+			
+			Group group = new Group(vbox);
+			Scene scene = new Scene(group);
+			setScene(scene);
+		}
 	}
 
 	/**
