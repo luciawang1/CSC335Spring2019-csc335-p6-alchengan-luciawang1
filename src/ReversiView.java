@@ -1,6 +1,8 @@
 import java.io.*;
 import java.util.Observable;
-import javafx.event.EventHandler;
+
+import javafx.application.Platform;
+import javafx.event.*;
 import javafx.geometry.*;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -303,55 +305,69 @@ public class ReversiView extends javafx.application.Application implements java.
 				NetworkSetup dialog = new NetworkSetup();
 				dialog.initModality(Modality.APPLICATION_MODAL);
 				dialog.showAndWait();
-				//System.out.println("?");
+				
+				//System.out.println(dialog.getIsServer()); <- this all works how you'd expect btw
+				//System.out.println(dialog.getIsHuman());
+				//System.out.println(dialog.getServer());
+				//System.out.println(dialog.getPort());
 			}
 		});
 	}
 	
 	private class NetworkSetup extends Stage {
+		private RadioButton rbServer;
+		private RadioButton rbClient;
+		private RadioButton rbHuman;
+		private RadioButton rbComputer;
+		private TextField tfServer;
+		private TextField tfPort;
+		private Button bOK;
+		private Button bCancel;
+		
+		private int isServer; //1 if Server selected; 2 if Client selected; 0 if neither selected
+		private int isHuman; //1 if Human selected; 2 if Computer selected; 0 if neither selected
+		
 		public NetworkSetup() {
-			setTitle("Network Setup");
+			isServer = 0;
+			isHuman = 0;
 			
+			setTitle("Network Setup");
 			fillWindow();
+			go();
 		}
 		
 		private void fillWindow() {
+			//just puts all the shit where they're supposed to go
 			Label lCreate = new Label("Create:");
-			RadioButton rbServer = new RadioButton();
-			Label lServer = new Label("Server");
-			HBox hbServer = new HBox();
-			hbServer.getChildren().addAll(rbServer, lServer);
-			RadioButton rbClient = new RadioButton();
-			Label lClient = new Label("Client");
-			HBox hbClient = new HBox();
-			hbClient.getChildren().addAll(rbClient, lClient);
+			rbServer = new RadioButton("Server");
+			rbClient = new RadioButton("Client");
+			ToggleGroup tgCreate = new ToggleGroup();
+			rbServer.setToggleGroup(tgCreate);
+			rbClient.setToggleGroup(tgCreate);
 			HBox create = new HBox();
-			create.getChildren().addAll(lCreate, hbServer, hbClient);
+			create.getChildren().addAll(lCreate, rbServer, rbClient);
 			create.setSpacing(10);
 			
 			Label lPlayAs = new Label("Play as:");
-			RadioButton rbHuman = new RadioButton();
-			Label lHuman = new Label("Human");
-			HBox hbHuman = new HBox();
-			hbHuman.getChildren().addAll(rbHuman, lHuman);
-			RadioButton rbComputer = new RadioButton();
-			Label lComputer = new Label("Computer");
-			HBox hbComputer = new HBox();
-			hbComputer.getChildren().addAll(rbComputer, lComputer);
+			rbHuman = new RadioButton("Human");
+			rbComputer = new RadioButton("Computer");
+			ToggleGroup tgPlayAs = new ToggleGroup();
+			rbHuman.setToggleGroup(tgPlayAs);
+			rbComputer.setToggleGroup(tgPlayAs);
 			HBox playAs = new HBox();
-			playAs.getChildren().addAll(lPlayAs, hbHuman, hbComputer);
+			playAs.getChildren().addAll(lPlayAs, rbHuman, rbComputer);
 			playAs.setSpacing(10);
 			
 			Label lServerAdd = new Label("Server");
-			TextField tfServer = new TextField("localhost");
+			tfServer = new TextField("localhost");
 			Label lPort = new Label("Port");
-			TextField tfPort = new TextField("4000");
+			tfPort = new TextField("4000");
 			HBox connectTo = new HBox();
 			connectTo.getChildren().addAll(lServerAdd, tfServer, lPort, tfPort);
 			connectTo.setSpacing(10);
 			
-			Button bOK = new Button("OK");
-			Button bCancel = new Button("Cancel");
+			bOK = new Button("OK");
+			bCancel = new Button("Cancel");
 			HBox buttons = new HBox();
 			buttons.getChildren().addAll(bOK, bCancel);
 			buttons.setSpacing(10);
@@ -366,6 +382,48 @@ public class ReversiView extends javafx.application.Application implements java.
 			Group group = new Group(vbox);
 			Scene scene = new Scene(group);
 			setScene(scene);
+		}
+		
+		//idk what else to call it lol
+		private void go() {
+			bOK.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					//clicking OK won't do anything unless options have been selected
+					if(rbServer.isSelected() || rbClient.isSelected()) {
+						if(rbHuman.isSelected() || rbComputer.isSelected()) {
+							//could check if server and port are legal but i'm lazy
+							isServer = (rbServer.isSelected() ? 1 : 2);
+							isHuman = (rbHuman.isSelected() ? 1 : 2);
+							close();
+						}
+					}
+				}
+			});
+			
+			bCancel.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					//doesn't do anything
+					close();
+				}
+			});
+		}
+		
+		public int getIsServer() {
+			return isServer;
+		}
+		
+		public int getIsHuman() {
+			return isHuman;
+		}
+		
+		public String getServer() {
+			return tfServer.getText();
+		}
+		
+		public String getPort() {
+			return tfPort.getText();
 		}
 	}
 
