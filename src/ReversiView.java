@@ -1,4 +1,5 @@
 import java.io.*;
+import java.net.*;
 import java.util.Observable;
 
 import javafx.application.Platform;
@@ -310,6 +311,39 @@ public class ReversiView extends javafx.application.Application implements java.
 				//System.out.println(dialog.getIsHuman());
 				//System.out.println(dialog.getServer());
 				//System.out.println(dialog.getPort());
+				
+				/* I don't think any of this works
+				if(dialog.getIsServer() != 0 && dialog.getIsHuman() != 0) {
+					if(dialog.getIsServer() == 1) {
+						ServerSocket reversiServer = new ServerSocket(dialog.getPort());
+						
+						Thread socketAccepter = new Thread() {
+							public void run() {
+								try {
+									Socket clientConnection = reversiServer.accept();
+									ObjectOutputStream output = new ObjectOutputStream(clientConnection.getOutputStream());
+									ObjectInputStream input = new ObjectInputStream(clientConnection.getInputStream());
+								} catch(IOException ioe) {
+									ioe.printStackTrace();
+								}
+							}
+						};
+						
+						socketAccepter.start();
+					} else if(dialog.getIsServer() == 2) {						
+						Thread makeConnection = new Thread() {
+							public void run() {
+								try {
+									Socket reversiClient = new Socket(dialog.getServer(), dialog.getPort());
+									ObjectOutputStream output = new ObjectOutputStream(reversiClient.getOutputStream());
+									ObjectInputStream input = new ObjectInputStream(reversiClient.getInputStream());
+								} catch(IOException ioe) {
+									ioe.printStackTrace();
+								}
+							}
+						};
+					}
+				} */
 			}
 		});
 	}
@@ -422,8 +456,8 @@ public class ReversiView extends javafx.application.Application implements java.
 			return tfServer.getText();
 		}
 		
-		public String getPort() {
-			return tfPort.getText();
+		public int getPort() {
+			return Integer.parseInt(tfPort.getText());
 		}
 	}
 
