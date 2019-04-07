@@ -202,7 +202,7 @@ public class ReversiView extends javafx.application.Application implements java.
 	private void clicking(Canvas board, Stage stage, Label label) {
 		board.setOnMouseClicked(mouse -> {
 			boolean gg = controller.gameOver();
-			if (controller.gameOver()) { // return if game over
+			if (gg) { // return if game over
 				gameOver(board, stage, label);
 				return;
 			}
