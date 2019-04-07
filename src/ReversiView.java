@@ -83,13 +83,13 @@ public class ReversiView extends javafx.application.Application implements java.
 		Label label = new Label("New Game");
 		MenuItem newGame = new CustomMenuItem(label);
 		menuFile.getItems().add(newGame);
-		
+
 		Label networkedGameLabel = new Label("Networked Game");
 		MenuItem networkedGame = new CustomMenuItem(networkedGameLabel);
 		menuFile.getItems().add(networkedGame);
-		
+
 		menuBar.getMenus().add(menuFile);
-		
+
 		score = new Label(scoreString()); // score on bottom
 		Canvas board = new Canvas(rowPixels, colPixels); // game board
 		gc = board.getGraphicsContext2D();
@@ -194,7 +194,7 @@ public class ReversiView extends javafx.application.Application implements java.
 	 * @param label Label to show score
 	 */
 	private void play(Canvas board, Stage stage, Label label, Label networkedGameLabel) {
-		
+
 		// handles user clicks on the board
 		board.setOnMouseClicked(new EventHandler<MouseEvent>() {
 
@@ -299,55 +299,43 @@ public class ReversiView extends javafx.application.Application implements java.
 				update(controller.model, controller.model.getBoard());
 			}
 		});
-		
+
 		networkedGameLabel.setOnMouseClicked(new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent event) {
 				NetworkSetup dialog = new NetworkSetup();
 				dialog.initModality(Modality.APPLICATION_MODAL);
 				dialog.showAndWait();
-				
-				//System.out.println(dialog.getIsServer()); <- this all works how you'd expect btw
-				//System.out.println(dialog.getIsHuman());
-				//System.out.println(dialog.getServer());
-				//System.out.println(dialog.getPort());
-				
-				/* I don't think any of this works
-				if(dialog.getIsServer() != 0 && dialog.getIsHuman() != 0) {
-					if(dialog.getIsServer() == 1) {
-						ServerSocket reversiServer = new ServerSocket(dialog.getPort());
-						
-						Thread socketAccepter = new Thread() {
-							public void run() {
-								try {
-									Socket clientConnection = reversiServer.accept();
-									ObjectOutputStream output = new ObjectOutputStream(clientConnection.getOutputStream());
-									ObjectInputStream input = new ObjectInputStream(clientConnection.getInputStream());
-								} catch(IOException ioe) {
-									ioe.printStackTrace();
-								}
-							}
-						};
-						
-						socketAccepter.start();
-					} else if(dialog.getIsServer() == 2) {						
-						Thread makeConnection = new Thread() {
-							public void run() {
-								try {
-									Socket reversiClient = new Socket(dialog.getServer(), dialog.getPort());
-									ObjectOutputStream output = new ObjectOutputStream(reversiClient.getOutputStream());
-									ObjectInputStream input = new ObjectInputStream(reversiClient.getInputStream());
-								} catch(IOException ioe) {
-									ioe.printStackTrace();
-								}
-							}
-						};
-					}
-				} */
+
+				// System.out.println(dialog.getIsServer()); <- this all works how you'd expect
+				// btw
+				// System.out.println(dialog.getIsHuman());
+				// System.out.println(dialog.getServer());
+				// System.out.println(dialog.getPort());
+
+				/*
+				 * I don't think any of this works if(dialog.getIsServer() != 0 &&
+				 * dialog.getIsHuman() != 0) { if(dialog.getIsServer() == 1) { ServerSocket
+				 * reversiServer = new ServerSocket(dialog.getPort());
+				 * 
+				 * Thread socketAccepter = new Thread() { public void run() { try { Socket
+				 * clientConnection = reversiServer.accept(); ObjectOutputStream output = new
+				 * ObjectOutputStream(clientConnection.getOutputStream()); ObjectInputStream
+				 * input = new ObjectInputStream(clientConnection.getInputStream()); }
+				 * catch(IOException ioe) { ioe.printStackTrace(); } } };
+				 * 
+				 * socketAccepter.start(); } else if(dialog.getIsServer() == 2) { Thread
+				 * makeConnection = new Thread() { public void run() { try { Socket
+				 * reversiClient = new Socket(dialog.getServer(), dialog.getPort());
+				 * ObjectOutputStream output = new
+				 * ObjectOutputStream(reversiClient.getOutputStream()); ObjectInputStream input
+				 * = new ObjectInputStream(reversiClient.getInputStream()); } catch(IOException
+				 * ioe) { ioe.printStackTrace(); } } }; } }
+				 */
 			}
 		});
 	}
-	
+
 	private class NetworkSetup extends Stage {
 		private RadioButton rbServer;
 		private RadioButton rbClient;
@@ -357,21 +345,17 @@ public class ReversiView extends javafx.application.Application implements java.
 		private TextField tfPort;
 		private Button bOK;
 		private Button bCancel;
-		
-		private int isServer; //1 if Server selected; 2 if Client selected; 0 if neither selected
-		private int isHuman; //1 if Human selected; 2 if Computer selected; 0 if neither selected
-		
+
+		private int isServer; // 1 if Server selected; 2 if Client selected; 0 if neither selected
+		private int isHuman; // 1 if Human selected; 2 if Computer selected; 0 if neither selected
+
 		public NetworkSetup() {
 			isServer = 0;
 			isHuman = 0;
-			
-			setTitle("Network Setup");
-			fillWindow();
-			go();
-		}
+			Dialog dialog = new Dialog();
+			dialog.setTitle("Network Setup");
 		
-		private void fillWindow() {
-			//just puts all the shit where they're supposed to go
+			// just puts all the shit where they're supposed to go
 			Label lCreate = new Label("Create:");
 			rbServer = new RadioButton("Server");
 			rbClient = new RadioButton("Client");
@@ -381,7 +365,7 @@ public class ReversiView extends javafx.application.Application implements java.
 			HBox create = new HBox();
 			create.getChildren().addAll(lCreate, rbServer, rbClient);
 			create.setSpacing(10);
-			
+
 			Label lPlayAs = new Label("Play as:");
 			rbHuman = new RadioButton("Human");
 			rbComputer = new RadioButton("Computer");
@@ -391,7 +375,7 @@ public class ReversiView extends javafx.application.Application implements java.
 			HBox playAs = new HBox();
 			playAs.getChildren().addAll(lPlayAs, rbHuman, rbComputer);
 			playAs.setSpacing(10);
-			
+
 			Label lServerAdd = new Label("Server");
 			tfServer = new TextField("localhost");
 			Label lPort = new Label("Port");
@@ -399,63 +383,63 @@ public class ReversiView extends javafx.application.Application implements java.
 			HBox connectTo = new HBox();
 			connectTo.getChildren().addAll(lServerAdd, tfServer, lPort, tfPort);
 			connectTo.setSpacing(10);
-			
+
 			bOK = new Button("OK");
+			bOK.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					// clicking OK won't do anything unless options have been selected
+					if (rbServer.isSelected() || rbClient.isSelected()) {
+						if (rbHuman.isSelected() || rbComputer.isSelected()) {
+							// could check if server and port are legal but i'm lazy
+							isServer = (rbServer.isSelected() ? 1 : 2);
+							isHuman = (rbHuman.isSelected() ? 1 : 2);
+							dialog.close();
+						}
+					}
+				}
+			});
+
 			bCancel = new Button("Cancel");
+
+			bCancel.setOnAction(new EventHandler<ActionEvent>() {
+				@Override
+				public void handle(ActionEvent event) {
+					// doesn't do anything
+					close();
+				}
+			});
+
 			HBox buttons = new HBox();
 			buttons.getChildren().addAll(bOK, bCancel);
 			buttons.setSpacing(10);
-			
+
 			VBox vbox = new VBox();
 			vbox.getChildren().addAll(create, playAs, connectTo, buttons);
 			VBox.setMargin(create, new Insets(20, 20, 20, 20));
 			VBox.setMargin(playAs, new Insets(20, 20, 20, 20));
 			VBox.setMargin(connectTo, new Insets(20, 20, 20, 20));
 			VBox.setMargin(buttons, new Insets(20, 20, 20, 20));
-			
+
 			Group group = new Group(vbox);
 			Scene scene = new Scene(group);
 			setScene(scene);
 		}
-		
-		//idk what else to call it lol
-		private void go() {
-			bOK.setOnAction(new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent event) {
-					//clicking OK won't do anything unless options have been selected
-					if(rbServer.isSelected() || rbClient.isSelected()) {
-						if(rbHuman.isSelected() || rbComputer.isSelected()) {
-							//could check if server and port are legal but i'm lazy
-							isServer = (rbServer.isSelected() ? 1 : 2);
-							isHuman = (rbHuman.isSelected() ? 1 : 2);
-							close();
-						}
-					}
-				}
-			});
-			
-			bCancel.setOnAction(new EventHandler<ActionEvent>() {
-				@Override
-				public void handle(ActionEvent event) {
-					//doesn't do anything
-					close();
-				}
-			});
-		}
-		
+
+		// idk what else to call it lol
+
 		public int getIsServer() {
 			return isServer;
 		}
-		
+
 		public int getIsHuman() {
 			return isHuman;
 		}
-		
+
 		public String getServer() {
 			return tfServer.getText();
 		}
-		
+
 		public int getPort() {
 			return Integer.parseInt(tfPort.getText());
 		}
