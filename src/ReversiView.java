@@ -395,6 +395,7 @@ public class ReversiView extends javafx.application.Application implements java.
 							isServer = (rbServer.isSelected() ? 1 : 2);
 							isHuman = (rbHuman.isSelected() ? 1 : 2);
 							dialog.close();
+							
 						}
 					}
 				}
