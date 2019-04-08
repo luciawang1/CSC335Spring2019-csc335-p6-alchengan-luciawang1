@@ -57,8 +57,22 @@ public class ReversiView extends javafx.application.Application implements java.
 
 	public boolean GAMEOVER;
 	private int c;
-	private String SERVER;
-	private int PORT;
+	private String SERVER = "localhost";
+	private int PORT = 4000;
+	private boolean SERVER_ON = false;
+	private boolean CLIENT_ON = false;
+
+	private RadioButton rbServer;
+	private RadioButton rbClient;
+	private RadioButton rbHuman;
+	private RadioButton rbComputer;
+	private TextField tfServer;
+	private TextField tfPort;
+	private Button bOK;
+	private Button bCancel;
+
+	private int isServer; // 1 if Server selected; 2 if Client selected; 0 if neither selected
+	private int isHuman; // 1 if Human selected; 2 if Computer selected; 0 if neither selected
 
 	/**
 	 * Constructs ReversiView object with new ReversiController object whose model
@@ -67,10 +81,6 @@ public class ReversiView extends javafx.application.Application implements java.
 	 * 
 	 * @param ReversiModel model
 	 */
-	public ReversiView() {
-		controller = new ReversiController();
-		controller.model.addObserver(this);
-	}
 
 	/**
 	 * Generages GUI for Reversi game, allows user to interact with the board
@@ -96,6 +106,9 @@ public class ReversiView extends javafx.application.Application implements java.
 		menuFile.getItems().add(networkedGame);
 
 		menuBar.getMenus().add(menuFile);
+
+		controller = new ReversiController();
+		controller.model.addObserver(this);
 
 		score = new Label(scoreString()); // score on bottom
 		Canvas board = new Canvas(rowPixels, colPixels); // game board
@@ -297,6 +310,102 @@ public class ReversiView extends javafx.application.Application implements java.
 
 		networkedGameLabel.setOnMouseClicked(event -> {
 			NetworkSetup dialog = new NetworkSetup();
+			bOK.setOnAction(event1 -> {
+				// clicking OK won't do anything unless options have been selected
+				if (rbServer.isSelected() || rbClient.isSelected()) {
+					if (rbHuman.isSelected() || rbComputer.isSelected()) {
+						// could check if server and port are legal but i'm lazy
+						isServer = (rbServer.isSelected() ? 1 : 2);
+						System.out.println("server is " + isServer);
+						isHuman = (rbHuman.isSelected() ? 1 : 2);
+						System.out.println("human is " + isHuman);
+						dialog.close();
+
+						// start new game
+						newGame();
+						clicking(board, stage, networkedGameLabel);
+
+						reset(board, stage, label);
+						update(controller.model, controller.model.getBoard());
+
+						// start server/client
+						if (isServer == 1) {
+							if (!serverOn) {
+								ServerSocket serverSocket = null;
+								try {
+									serverSocket = new ServerSocket(PORT);
+									socket = serverSocket.accept();
+									System.out.println("Connected to Server");
+
+								} catch (IOException e) {
+									System.out.println("Can't connect to server");
+
+									// e.printStackTrace();
+								}
+
+								// player type is cpu
+								if (isHuman == 2) {
+									while (!controller.gameOver() && controller.hasValidMoves("B")) {
+										boolean bValid = false;
+										int row = 0;
+										int col = 0;
+
+										String turn = "B";
+										while (!bValid) {
+											row = (int) (Math.random() * dimension);
+											col = (int) (Math.random() * dimension);
+											bValid = controller.checkValid(row, col, turn, false);
+										}
+										controller.checkValid(row, col, turn, true);
+										controller.move(row, col, turn);
+									}
+
+								}
+								serverOn = true;
+							} else {
+								System.out.println("the else part");
+							}
+
+						} else if (isServer == 2) {
+							try {
+								socket = new Socket(SERVER, PORT);
+								System.out.println("Connected to Server");
+
+							} catch (IOException e) {
+								System.out.println("Can't connect to server");
+								// e.printStackTrace();
+							}
+							// player is cpu
+							if (isHuman == 2) {
+								Thread clientThread = new ClientThread();
+								clientThread.run();
+								while (!controller.gameOver() && controller.hasValidMoves("W")) {
+									boolean wValid = false;
+									int row = 0;
+									int col = 0;
+
+									String turn = "W";
+									while (!wValid) {
+										row = (int) (Math.random() * dimension);
+										col = (int) (Math.random() * dimension);
+										wValid = controller.checkValid(row, col, turn, false);
+									}
+									controller.checkValid(row, col, turn, true);
+									controller.move(row, col, turn);
+								}
+							}
+						}
+					}
+
+				}
+
+			});
+
+			bCancel.setOnAction(event3 -> {
+				// doesn't do anything
+				dialog.close();
+
+			});
 			dialog.initModality(Modality.APPLICATION_MODAL);
 			dialog.showAndWait();
 
@@ -304,17 +413,6 @@ public class ReversiView extends javafx.application.Application implements java.
 	}
 
 	class NetworkSetup extends Stage {
-		private RadioButton rbServer;
-		private RadioButton rbClient;
-		private RadioButton rbHuman;
-		private RadioButton rbComputer;
-		private TextField tfServer;
-		private TextField tfPort;
-		private Button bOK;
-		private Button bCancel;
-
-		private int isServer; // 1 if Server selected; 2 if Client selected; 0 if neither selected
-		private int isHuman; // 1 if Human selected; 2 if Computer selected; 0 if neither selected
 
 		public NetworkSetup() {
 			isServer = 0;
@@ -353,99 +451,8 @@ public class ReversiView extends javafx.application.Application implements java.
 			connectTo.setSpacing(10);
 
 			bOK = new Button("OK");
-			bOK.setOnAction(event -> {
-				// clicking OK won't do anything unless options have been selected
-				if (rbServer.isSelected() || rbClient.isSelected()) {
-					if (rbHuman.isSelected() || rbComputer.isSelected()) {
-						// could check if server and port are legal but i'm lazy
-						isServer = (rbServer.isSelected() ? 1 : 2);
-						isHuman = (rbHuman.isSelected() ? 1 : 2);
-						close();
-
-						// start new game
-						// controller.model = new ReversiModel();
-						// controller.model.addObserver(new ReversiView());
-						// controller.resetBoard();
-
-						// start server/client
-						if (isServer == 1) {
-							if (!serverOn) {
-								ServerSocket serverSocket = null;
-								try {
-									serverSocket = new ServerSocket(getPort());
-									socket = serverSocket.accept();
-									System.out.println("Connected to Server");
-
-								} catch (IOException e) {
-									System.out.println("Can't connect to server");
-
-									// e.printStackTrace();
-								}
-
-								// player type is cpu
-								if (isHuman == 2) {
-									while (!controller.gameOver() && controller.hasValidMoves("B")) {
-										boolean bValid = false;
-										int row = 0;
-										int col = 0;
-
-										String turn = "B";
-										while (!bValid) {
-											row = (int) (Math.random() * dimension);
-											col = (int) (Math.random() * dimension);
-											bValid = controller.checkValid(row, col, turn, false);
-										}
-										controller.checkValid(row, col, turn, true);
-										controller.move(row, col, turn);
-									}
-
-									serverOn = true;
-
-								}
-
-							} else if (isServer == 2) {
-								try {
-									socket = new Socket(getServer(), getPort());
-									System.out.println("Connected to Server");
-
-								} catch (IOException e) {
-									System.out.println("Can't connect to server");
-									// e.printStackTrace();
-								}
-								// player is cpu
-								if (isHuman == 2) {
-									Thread clientThread = new ClientThread();
-									clientThread.run();
-									while (!controller.gameOver() && controller.hasValidMoves("W")) {
-										boolean wValid = false;
-										int row = 0;
-										int col = 0;
-
-										String turn = "W";
-										while (!wValid) {
-											row = (int) (Math.random() * dimension);
-											col = (int) (Math.random() * dimension);
-											wValid = controller.checkValid(row, col, turn, false);
-										}
-										controller.checkValid(row, col, turn, true);
-										controller.move(row, col, turn);
-									}
-								}
-							}
-						}
-
-					}
-
-				}
-			});
 
 			bCancel = new Button("Cancel");
-
-			bCancel.setOnAction(event -> {
-				// doesn't do anything
-				close();
-
-			});
 
 			HBox buttons = new HBox();
 			buttons.getChildren().addAll(bOK, bCancel);
@@ -495,7 +502,7 @@ public class ReversiView extends javafx.application.Application implements java.
 			try {
 
 				// out
-				ServerSocket server = new ServerSocket(PORT);
+				// ServerSocket server = new ServerSocket(PORT);
 				while (controller.gameOver()) {
 					ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 					out.writeObject(rb);
@@ -514,7 +521,7 @@ public class ReversiView extends javafx.application.Application implements java.
 				// output game info
 
 			} catch (IOException e) {
-				System.out.println(" io exception ");
+				System.out.println(" asdf io exception ");
 			} catch (ClassNotFoundException e) {
 				System.out.println("server class notfound");
 			}
@@ -571,9 +578,9 @@ public class ReversiView extends javafx.application.Application implements java.
 		ReversiBoard rb = (ReversiBoard) oBoard;
 		for (int i = 0; i < ReversiBoard.DIM; i++) {
 			for (int j = 0; j < ReversiBoard.DIM; j++) {
-				if (rb.getAt(i, j) == ReversiBoard.BLANK)
+				if (rb.getAt(i, j) == ReversiBoard.BLANK) {
 					gc.setFill(Color.TRANSPARENT);
-				else if (rb.getAt(i, j) == ReversiBoard.WHITE)
+				} else if (rb.getAt(i, j) == ReversiBoard.WHITE)
 					gc.setFill(Color.WHITE);
 				else if (rb.getAt(i, j) == ReversiBoard.BLACK)
 					gc.setFill(Color.BLACK);
