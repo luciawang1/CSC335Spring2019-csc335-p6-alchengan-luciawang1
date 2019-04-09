@@ -91,6 +91,12 @@ public class ReversiModel extends Observable {
 	public ReversiBoard getBoard() {
 		return board;
 	}
+	
+	public void setterBoard(ReversiBoard rb) {
+		board = rb;
+		setChanged();
+		notifyObservers();
+	}
 
 	/**
 	 * Getter for string version of the board

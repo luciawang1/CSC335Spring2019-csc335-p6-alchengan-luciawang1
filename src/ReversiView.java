@@ -61,6 +61,8 @@ public class ReversiView extends javafx.application.Application implements java.
 	private int PORT = 4000;
 	private boolean SERVER_ON = false;
 	private boolean CLIENT_ON = false;
+	private ReversiServer server;
+	private ReversiClient client;
 
 	private RadioButton rbServer;
 	private RadioButton rbClient;
@@ -305,7 +307,25 @@ public class ReversiView extends javafx.application.Application implements java.
 			newGame();
 			reset(board, stage, label);
 			update(controller.model, controller.model.getBoard());
-
+			
+			if(server != null) {
+				try {
+					server.sendBoard(controller.model.getBoard());
+					System.out.println("yes?");
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			
+			if(client != null) {
+				Platform.runLater(() -> {
+					try {
+						client.sendBoard(controller.model.getBoard());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				});
+			}
 		});
 
 		networkedGameLabel.setOnMouseClicked(event -> {
@@ -327,73 +347,52 @@ public class ReversiView extends javafx.application.Application implements java.
 
 						reset(board, stage, label);
 						update(controller.model, controller.model.getBoard());
-
-						// start server/client
-						if (isServer == 1) {
-							if (!serverOn) {
-								ServerSocket serverSocket = null;
-								try {
-									serverSocket = new ServerSocket(PORT);
-									socket = serverSocket.accept();
-									System.out.println("Connected to Server");
-
-								} catch (IOException e) {
-									System.out.println("Can't connect to server");
-
-									// e.printStackTrace();
-								}
-
-								// player type is cpu
-								if (isHuman == 2) {
-									while (!controller.gameOver() && controller.hasValidMoves("B")) {
-										boolean bValid = false;
-										int row = 0;
-										int col = 0;
-
-										String turn = "B";
-										while (!bValid) {
-											row = (int) (Math.random() * dimension);
-											col = (int) (Math.random() * dimension);
-											bValid = controller.checkValid(row, col, turn, false);
+						
+						if(isServer == 1) {
+							Thread runServer = new Thread() {
+								public void run() {
+									server = new ReversiServer(dialog.getPort());
+									
+									try {
+										while(true) {
+											ReversiBoard received = (ReversiBoard) server.getInput().readObject();
+											controller.model.setterBoard(received);
+											System.out.println("yes");
 										}
-										controller.checkValid(row, col, turn, true);
-										controller.move(row, col, turn);
+									} catch(SocketTimeoutException ste) {
+										ste.printStackTrace();
+									} catch(EOFException eofe) {
+										eofe.printStackTrace();
+									} catch(IOException ioe) {
+										ioe.printStackTrace();
+									} catch(ClassNotFoundException cnfe) {
+										cnfe.printStackTrace();
 									}
-
 								}
-								serverOn = true;
-							} else {
-								System.out.println("the else part");
-							}
-
-						} else if (isServer == 2) {
-							try {
-								socket = new Socket(SERVER, PORT);
-								System.out.println("Connected to Server");
-
-							} catch (IOException e) {
-								System.out.println("Can't connect to server");
-								// e.printStackTrace();
-							}
-							// player is cpu
-							if (isHuman == 2) {
-								Thread clientThread = new ClientThread();
-								clientThread.run();
-								while (!controller.gameOver() && controller.hasValidMoves("W")) {
-									boolean wValid = false;
-									int row = 0;
-									int col = 0;
-
-									String turn = "W";
-									while (!wValid) {
-										row = (int) (Math.random() * dimension);
-										col = (int) (Math.random() * dimension);
-										wValid = controller.checkValid(row, col, turn, false);
+							};
+							runServer.start();
+						} else if(isServer == 2) {
+							Thread runClient = new Thread() {
+								public void run() {
+									client = new ReversiClient(dialog.getPort());
+									
+									try {
+										while(true) {
+											ReversiBoard received = (ReversiBoard) client.getInput().readObject();
+											controller.model.setterBoard(received);
+										}
+									} catch(SocketTimeoutException ste) {
+										ste.printStackTrace();
+									} catch(EOFException eofe) {
+										eofe.printStackTrace();
+									} catch(IOException ioe) {
+										ioe.printStackTrace();
+									} catch(ClassNotFoundException cnfe) {
+										cnfe.printStackTrace();
 									}
-									controller.checkValid(row, col, turn, true);
-									controller.move(row, col, turn);
 								}
-							}
+							};
+							runClient.start();
 						}
 					}
 
@@ -511,6 +510,7 @@ public class ReversiView extends javafx.application.Application implements java.
 					ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
 					ReversiBoard move = (ReversiBoard) in.readObject();
+					Platform.runLater(() -> controller.model.setterBoard(rb));
 					System.out.println("sever in: " + move);
 					// update the board?????
 
@@ -536,6 +536,7 @@ public class ReversiView extends javafx.application.Application implements java.
 				// in
 				ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 				ReversiBoard rb = (ReversiBoard) in.readObject();
+				Platform.runLater(() -> controller.model.setterBoard(rb));
 				System.out.println("client in : " + rb);
 
 				// idk update board
